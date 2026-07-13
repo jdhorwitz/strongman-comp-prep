@@ -26,9 +26,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 		<React.Fragment>
 			<div className="app-shell">
 				<header className="topbar">
-					<p className="eyebrow">Great Lakes Strongest Man VIII · Masters 220</p>
+					<p className="eyebrow">
+						Great Lakes Strongest Man VIII · Masters 220
+					</p>
 					<h1>Competition Command Center</h1>
-					<p className="topbar-subtitle">Weight cut, event prep, recovery, and PR tracking in one place.</p>
+					<p className="topbar-subtitle">
+						Weight cut, event prep, recovery, and PR tracking in one place.
+					</p>
 				</header>
 				<main className="page">{children}</main>
 				<nav className="bottom-nav">
