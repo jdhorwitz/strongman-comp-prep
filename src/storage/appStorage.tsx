@@ -26,6 +26,7 @@ import {
 	saveRemoteAppData,
 	signInWithEmail,
 	signOutOfSupabase,
+	syncOuraFromSupabaseFunction,
 	type SyncStatus,
 } from "./supabaseSync.ts";
 import { appDataSchema } from "./schemas.ts";
@@ -52,6 +53,7 @@ type AppDataContextValue = {
 	signIn: (email: string) => Promise<void>;
 	signOut: () => Promise<void>;
 	syncNow: () => Promise<void>;
+	syncOuraNow: () => Promise<void>;
 };
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 
@@ -271,6 +273,18 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 		setSyncStatus("synced");
 	}, [data]);
 
+	const syncOuraNow = React.useCallback(async () => {
+		setSyncStatus("syncing");
+		setSyncError(null);
+		await syncOuraFromSupabaseFunction();
+		const publicData = await fetchPublicAppData();
+		if (publicData) {
+			dispatch({ type: "import", data: publicData.data });
+			await saveAppDataToDatabase(publicData.data);
+		}
+		setSyncStatus("synced");
+	}, []);
+
 	const value = useMemo(
 		() => ({
 			data,
@@ -282,8 +296,18 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 			signIn,
 			signOut,
 			syncNow,
+			syncOuraNow,
 		}),
-		[data, session, signIn, signOut, syncError, syncNow, syncStatus],
+		[
+			data,
+			session,
+			signIn,
+			signOut,
+			syncError,
+			syncNow,
+			syncOuraNow,
+			syncStatus,
+		],
 	);
 	return (
 		<AppDataContext.Provider value={value}>

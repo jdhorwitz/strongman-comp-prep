@@ -210,17 +210,6 @@ Deno.serve(async (request: Request) => {
 	if (request.method !== "POST")
 		return jsonResponse(request, { error: "Method not allowed" }, 405);
 
-	const expectedToken =
-		Deno.env.get("OURA_SYNC_TOKEN") ?? Deno.env.get("CHATGPT_IMPORT_TOKEN");
-	if (!expectedToken)
-		return jsonResponse(
-			request,
-			{ error: "OURA_SYNC_TOKEN or CHATGPT_IMPORT_TOKEN is not configured" },
-			500,
-		);
-	if (bearerToken(request) !== expectedToken)
-		return jsonResponse(request, { error: "Unauthorized" }, 401);
-
 	try {
 		const { startDate, endDate } = parseRange(
 			await request.json().catch(() => ({})),
@@ -231,6 +220,20 @@ Deno.serve(async (request: Request) => {
 		if (!ouraToken) throw new Error("OURA_ACCESS_TOKEN is not configured.");
 		if (!supabaseUrl || !serviceRoleKey)
 			throw new Error("Supabase service env vars are not configured.");
+
+		const supabase = createClient(supabaseUrl, serviceRoleKey, {
+			auth: { persistSession: false },
+		});
+		const token = bearerToken(request);
+		const expectedToken =
+			Deno.env.get("OURA_SYNC_TOKEN") ?? Deno.env.get("CHATGPT_IMPORT_TOKEN");
+		const isImportToken = Boolean(expectedToken && token === expectedToken);
+		const user = token && !isImportToken
+			? (await supabase.auth.getUser(token)).data.user
+			: null;
+		const isJosh = user?.email === "jhorwitz@fastmail.com";
+		if (!isImportToken && !isJosh)
+			return jsonResponse(request, { error: "Unauthorized" }, 401);
 
 		const [readiness, dailySleep, sleepDetails, activity] = await Promise.all([
 			fetchOuraCollection("daily_readiness", startDate, endDate, ouraToken),
@@ -245,9 +248,6 @@ Deno.serve(async (request: Request) => {
 			activity,
 		);
 
-		const supabase = createClient(supabaseUrl, serviceRoleKey, {
-			auth: { persistSession: false },
-		});
 		const { data: row, error: readError } = await supabase
 			.from("app_data_public")
 			.select("data")

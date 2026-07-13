@@ -114,9 +114,10 @@ a {
 .grid {
 	display: grid;
 	gap: 14px;
+	align-items: start;
 }
 .grid.two {
-	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
 }
 .grid.three {
 	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -213,7 +214,7 @@ a {
 	width: 100%;
 	border: 1px solid var(--border);
 	border-radius: 16px;
-	padding: 12px 13px;
+	padding: 10px 12px;
 	background: rgba(4, 10, 15, 0.56);
 	color: var(--text);
 	outline: none;
@@ -230,7 +231,7 @@ a {
 	background: rgba(4, 10, 15, 0.82);
 }
 .form textarea {
-	min-height: 92px;
+	min-height: 84px;
 	resize: vertical;
 }
 .button-row {

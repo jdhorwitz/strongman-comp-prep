@@ -111,6 +111,26 @@ export async function savePublicAppData(data: AppData): Promise<void> {
 	if (error) throw error;
 }
 
+export async function syncOuraFromSupabaseFunction(): Promise<void> {
+	if (!supabase || !supabaseUrl) throw new Error("Supabase is not configured.");
+	const session = await getCurrentSession();
+	if (!session) throw new Error("Sign in before syncing Oura.");
+	const response = await fetch(`${supabaseUrl}/functions/v1/sync-oura`, {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${session.access_token}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({}),
+	});
+	const result = await response.json().catch(() => ({}));
+	if (!response.ok) {
+		throw new Error(
+			typeof result.error === "string" ? result.error : "Oura sync failed",
+		);
+	}
+}
+
 export async function saveRemoteAppData(
 	session: Session,
 	data: AppData,
