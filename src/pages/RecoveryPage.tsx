@@ -19,7 +19,10 @@ export function RecoveryPage() {
 			<section className="card">
 				<h2>Log recovery</h2>
 				{canEdit ? null : (
-					<p className="muted">Public view is read-only. Sign in under Settings to add, update, or delete recovery entries.</p>
+					<p className="muted">
+						Public view is read-only. Sign in under Settings to add, update, or
+						delete recovery entries.
+					</p>
 				)}
 				<form
 					className="form"
@@ -111,31 +114,46 @@ export function RecoveryPage() {
 							onChange={(event) => setMobilityWork(val(event))}
 						/>
 					</label>
-					<button className="btn" disabled={!canEdit}>Save recovery</button>
+					<button className="btn" disabled={!canEdit}>
+						Save recovery
+					</button>
 				</form>
 			</section>
 			<section className="card">
 				<h2>Recovery log</h2>
-				{canEdit ? null : <p className="muted">You are viewing Josh’s public recovery data. Delete/edit controls are only available after sign-in.</p>}
+				{canEdit ? null : (
+					<p className="muted">
+						You are viewing Josh’s public recovery data. Delete/edit controls
+						are only available after sign-in.
+					</p>
+				)}
 				<div className="list">
 					{[...data.recoveryEntries].reverse().map((entry) => (
 						<div className="list-item split" key={entry.id}>
 							<span>
 								<strong>{entry.date}</strong>
-								{entry.source ? <span className="muted"> · {entry.source}</span> : null}
+								{entry.source ? (
+									<span className="muted"> · {entry.source}</span>
+								) : null}
 								<br />
 								Recovery {entry.recoveryScore ?? "—"} · Fatigue{" "}
 								{entry.fatigueScore ?? "—"} · Sleep {entry.sleepHours ?? "—"}h
 								<br />
 								<span className="muted">
 									Readiness {entry.readinessScore ?? "—"} · Sleep score{" "}
-									{entry.sleepScore ?? "—"} · Activity {entry.activityScore ?? "—"}
+									{entry.sleepScore ?? "—"} · Activity{" "}
+									{entry.activityScore ?? "—"}
 								</span>
 								<br />
 								<span className="muted">
-									RHR {entry.restingHeartRate ?? "—"} · HRV {entry.hrvMs ?? "—"}ms
-									{entry.respiratoryRate ? ` · Resp ${entry.respiratoryRate}` : ""}
-									{entry.bodyTemperatureDeviation ? ` · Temp ${entry.bodyTemperatureDeviation}` : ""}
+									RHR {entry.restingHeartRate ?? "—"} · HRV {entry.hrvMs ?? "—"}
+									ms
+									{entry.respiratoryRate
+										? ` · Resp ${entry.respiratoryRate}`
+										: ""}
+									{entry.bodyTemperatureDeviation
+										? ` · Temp ${entry.bodyTemperatureDeviation}`
+										: ""}
 								</span>
 								<br />
 								<span className="muted">

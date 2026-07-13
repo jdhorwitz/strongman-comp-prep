@@ -87,7 +87,9 @@ export function SettingsPage() {
 						restingHeartRate: numberOrUndefined(row.restingHeartRate),
 						hrvMs: numberOrUndefined(row.hrvMs),
 						respiratoryRate: numberOrUndefined(row.respiratoryRate),
-						bodyTemperatureDeviation: numberOrUndefined(row.bodyTemperatureDeviation),
+						bodyTemperatureDeviation: numberOrUndefined(
+							row.bodyTemperatureDeviation,
+						),
 						source: row.source,
 						mobilityWork: row.mobilityWork,
 						notes: row.notes,
