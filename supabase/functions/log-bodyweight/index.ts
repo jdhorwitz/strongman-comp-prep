@@ -90,7 +90,7 @@ function optionalNumber(
 	return value;
 }
 
-function assertPayload(value: unknown): BodyweightPayload {
+function assertSinglePayload(value: unknown): BodyweightPayload {
 	if (!value || typeof value !== "object")
 		throw new Error("JSON body is required.");
 	const payload = value as Record<string, unknown>;
@@ -112,6 +112,71 @@ function assertPayload(value: unknown): BodyweightPayload {
 		source: optionalString(payload, "source"),
 		notes: optionalString(payload, "notes"),
 	};
+}
+
+function sourceRank(source: string | undefined) {
+	if (!source) return 0;
+	if (/renpho/i.test(source)) return 4;
+	if (/withings/i.test(source)) return 3;
+	if (/apple/i.test(source)) return 2;
+	if (/macrofactor/i.test(source)) return 1;
+	return 0;
+}
+
+function healthExportPayloads(value: unknown): BodyweightPayload[] | null {
+	const root = value as {
+		data?: {
+			metrics?: Array<{ name?: string; units?: string; data?: unknown[] }>;
+		};
+	};
+	const metrics = root?.data?.metrics;
+	if (!Array.isArray(metrics)) return null;
+	const weightMetric = metrics.find(
+		(metric) => metric.name === "weight_body_mass",
+	);
+	if (!weightMetric || !Array.isArray(weightMetric.data)) return [];
+	const units = weightMetric.units ?? "lb";
+	const byDate = new Map<string, BodyweightPayload & { rawDate?: string }>();
+	for (const item of weightMetric.data as Array<Record<string, unknown>>) {
+		const rawDate = item.date;
+		const qty = item.qty;
+		if (
+			typeof rawDate !== "string" ||
+			typeof qty !== "number" ||
+			!Number.isFinite(qty) ||
+			qty <= 0
+		)
+			continue;
+		const date = rawDate.slice(0, 10);
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+		const source =
+			typeof item.source === "string" ? item.source : "Apple Health";
+		const weightLb = units.toLowerCase() === "kg" ? qty * 2.2046226218 : qty;
+		const candidate = {
+			date,
+			weightLb: Number(weightLb.toFixed(1)),
+			source,
+			notes: "Imported from Apple Health export",
+			rawDate,
+		};
+		const current = byDate.get(date);
+		if (
+			!current ||
+			sourceRank(candidate.source) > sourceRank(current.source) ||
+			candidate.rawDate > (current.rawDate ?? "")
+		) {
+			byDate.set(date, candidate);
+		}
+	}
+	return [...byDate.values()].map(
+		({ rawDate: _rawDate, ...payload }) => payload,
+	);
+}
+
+function assertPayloads(value: unknown): BodyweightPayload[] {
+	const healthExport = healthExportPayloads(value);
+	if (healthExport) return healthExport;
+	return [assertSinglePayload(value)];
 }
 
 Deno.serve(async (request: Request) => {
