@@ -256,6 +256,12 @@ a {
 	filter: brightness(1.04);
 	box-shadow: 0 16px 34px rgba(103, 232, 249, 0.2);
 }
+.btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.45;
+	transform: none;
+	filter: grayscale(0.4);
+}
 .btn.secondary {
 	background: rgba(148, 163, 184, 0.12);
 	border: 1px solid var(--border);

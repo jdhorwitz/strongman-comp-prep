@@ -6,7 +6,8 @@ const val = (event: { currentTarget: unknown }) =>
 	(event.currentTarget as { value: string }).value;
 
 export function NutritionPage() {
-	const { data, dispatch } = useAppData();
+	const { data, dispatch, isSupabaseConfigured, userEmail } = useAppData();
+	const canEdit = !isSupabaseConfigured || Boolean(userEmail);
 	const [date, setDate] = React.useState(new Date().toISOString().slice(0, 10));
 	const [calories, setCalories] = React.useState("");
 	const [proteinG, setProteinG] = React.useState("");
@@ -18,10 +19,14 @@ export function NutritionPage() {
 		<div className="grid two">
 			<section className="card">
 				<h2>Log nutrition & meals</h2>
+				{canEdit ? null : (
+					<p className="muted">Public view is read-only. Sign in under Settings to add, update, or delete nutrition entries.</p>
+				)}
 				<form
 					className="form"
 					onSubmit={(event) => {
 						event.preventDefault();
+						if (!canEdit) return;
 						dispatch({
 							type: "addNutrition",
 							entry: {
@@ -93,7 +98,7 @@ export function NutritionPage() {
 							placeholder="Meals: egg breakfast, yogurt bowl, Chipotle bowl. Fiber estimate: 32g."
 						/>
 					</label>
-					<button className="btn">Save nutrition</button>
+					<button className="btn" disabled={!canEdit}>Save nutrition</button>
 				</form>
 			</section>
 			<section className="card">
@@ -112,6 +117,7 @@ export function NutritionPage() {
 			</section>
 			<section className="card" style={{ gridColumn: "1 / -1" }}>
 				<h2>Daily meals</h2>
+				{canEdit ? null : <p className="muted">You are viewing Josh’s public progress. Delete/edit controls are only available after sign-in.</p>}
 				<div className="list">
 					{[...data.nutritionEntries].reverse().map((entry) => (
 						<div className="list-item split" key={entry.id}>
@@ -126,14 +132,16 @@ export function NutritionPage() {
 									<p className="muted">No meal details saved for this day.</p>
 								)}
 							</div>
-							<button
-								className="btn danger"
-								onClick={() =>
-									dispatch({ type: "deleteNutrition", id: entry.id })
-								}
-							>
-								Delete
-							</button>
+							{canEdit ? (
+								<button
+									className="btn danger"
+									onClick={() =>
+										dispatch({ type: "deleteNutrition", id: entry.id })
+									}
+								>
+									Delete
+								</button>
+							) : null}
 						</div>
 					))}
 				</div>
