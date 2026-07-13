@@ -157,7 +157,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 				fetchPublicAppData(),
 			]);
 			const newestRemote = [privateRemote, publicRemote]
-				.filter((remote): remote is NonNullable<typeof remote> => Boolean(remote))
+				.filter((remote): remote is NonNullable<typeof remote> =>
+					Boolean(remote),
+				)
 				.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
 			if (newestRemote) {
 				dispatch({ type: "import", data: newestRemote.data });
