@@ -12,11 +12,12 @@ export function NutritionPage() {
 	const [proteinG, setProteinG] = React.useState("");
 	const [carbsG, setCarbsG] = React.useState("");
 	const [fatG, setFatG] = React.useState("");
+	const [notes, setNotes] = React.useState("");
 	const avg = averageNutrition(data.nutritionEntries, 7);
 	return (
 		<div className="grid two">
 			<section className="card">
-				<h2>Log nutrition</h2>
+				<h2>Log nutrition & meals</h2>
 				<form
 					className="form"
 					onSubmit={(event) => {
@@ -29,12 +30,14 @@ export function NutritionPage() {
 								proteinG: Number(proteinG),
 								carbsG: Number(carbsG),
 								fatG: Number(fatG),
+								notes,
 							},
 						});
 						setCalories("");
 						setProteinG("");
 						setCarbsG("");
 						setFatG("");
+						setNotes("");
 					}}
 				>
 					<label>
@@ -82,6 +85,14 @@ export function NutritionPage() {
 							required
 						/>
 					</label>
+					<label>
+						Meals / notes
+						<textarea
+							value={notes}
+							onChange={(event) => setNotes(val(event))}
+							placeholder="Meals: egg breakfast, yogurt bowl, Chipotle bowl. Fiber estimate: 32g."
+						/>
+					</label>
 					<button className="btn">Save nutrition</button>
 				</form>
 			</section>
@@ -100,16 +111,21 @@ export function NutritionPage() {
 				)}
 			</section>
 			<section className="card" style={{ gridColumn: "1 / -1" }}>
-				<h2>Entries</h2>
+				<h2>Daily meals</h2>
 				<div className="list">
 					{[...data.nutritionEntries].reverse().map((entry) => (
 						<div className="list-item split" key={entry.id}>
-							<span>
+							<div>
 								<strong>{entry.date}</strong>
 								<br />
 								{entry.calories} kcal · {entry.proteinG}P/{entry.carbsG}C/
 								{entry.fatG}F
-							</span>
+								{entry.notes ? (
+									<p className="meal-notes">{entry.notes}</p>
+								) : (
+									<p className="muted">No meal details saved for this day.</p>
+								)}
+							</div>
 							<button
 								className="btn danger"
 								onClick={() =>

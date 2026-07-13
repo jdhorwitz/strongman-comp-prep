@@ -330,9 +330,14 @@ a {
 }
 .split {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
-	gap: 10px;
+	gap: 14px;
+}
+.meal-notes {
+	margin: 10px 0 0;
+	color: #c5d4e3;
+	max-width: 72ch;
 }
 .table-wrap {
 	overflow: auto;
