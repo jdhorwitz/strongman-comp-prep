@@ -60,6 +60,15 @@ function bearerToken(request: Request): string | null {
 		: null;
 }
 
+function errorMessage(error: unknown): string {
+	if (error instanceof Error) return error.message;
+	try {
+		return JSON.stringify(error);
+	} catch {
+		return String(error);
+	}
+}
+
 function numericField(
 	payload: Record<string, unknown>,
 	key: keyof NutritionPayload,
@@ -173,10 +182,7 @@ Deno.serve(async (request: Request) => {
 			updatedAt,
 		});
 	} catch (error) {
-		return jsonResponse(
-			request,
-			{ error: error instanceof Error ? error.message : "Unknown error" },
-			400,
-		);
+		console.error("log-nutrition-day failed", error);
+		return jsonResponse(request, { error: errorMessage(error) }, 400);
 	}
 });
