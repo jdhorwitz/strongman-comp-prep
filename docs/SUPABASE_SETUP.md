@@ -1,8 +1,8 @@
 # Supabase Sync Setup
 
-The app works locally with IndexedDB by default. To sync across browsers/devices, create a Supabase project and add the public URL/anon key as Vite environment variables.
+The app works locally with IndexedDB by default. With Supabase configured, Josh can sign in and save updates, while public visitors can see the latest public tracker data without signing in.
 
-## 1. Create table
+## 1. Create private per-user table
 
 Run this in the Supabase SQL editor:
 
@@ -32,15 +32,49 @@ create policy "users can update own tracker data"
   with check (auth.uid() = user_id);
 ```
 
-## 2. Configure auth
+## 2. Create public read-only tracker table
+
+Replace `jhorwitz@fastmail.com` if you use a different magic-link email.
+
+```sql
+create table if not exists public.app_data_public (
+  id text primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.app_data_public enable row level security;
+
+create policy "anyone can read Josh tracker"
+  on public.app_data_public
+  for select
+  using (id = 'josh');
+
+create policy "only Josh can insert public tracker"
+  on public.app_data_public
+  for insert
+  with check (id = 'josh' and auth.email() = 'jhorwitz@fastmail.com');
+
+create policy "only Josh can update public tracker"
+  on public.app_data_public
+  for update
+  using (id = 'josh' and auth.email() = 'jhorwitz@fastmail.com')
+  with check (id = 'josh' and auth.email() = 'jhorwitz@fastmail.com');
+```
+
+## 3. Configure auth
 
 In Supabase Authentication settings:
 
 - Enable email magic links / OTP sign-in.
-- Add your GitHub Pages URL to allowed redirect URLs.
-- For local development, add `http://127.0.0.1:5173/strongman-comp-prep/`.
+- Set Site URL to `https://jdhorwitz.github.io/strongman-comp-prep/`.
+- Add redirect URLs:
+  - `https://jdhorwitz.github.io/strongman-comp-prep/`
+  - `https://jdhorwitz.github.io/strongman-comp-prep/**`
+  - `http://127.0.0.1:5173/strongman-comp-prep/`
+  - `http://127.0.0.1:5173/strongman-comp-prep/**`
 
-## 3. Configure environment
+## 4. Configure environment
 
 For local dev, create `.env.local`:
 
@@ -49,11 +83,15 @@ VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-public-anon-key
 ```
 
-For GitHub Pages, add repository secrets or variables and expose them during build. The app only uses the public anon key; Row Level Security protects each user's row.
+For GitHub Pages, add repository variables:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
 ## Sync behavior
 
 - IndexedDB remains the local cache.
-- When signed in, data is saved to Supabase after changes.
-- On sign-in, existing remote data wins if present; otherwise local data seeds the remote row.
+- Signed-out/public visitors load the latest `app_data_public` row for `id = 'josh'`.
+- When Josh signs in, changes save to both the private row and public row.
+- Public visitors see updated progress after refresh/reopen.
 - JSON export remains the safest full backup.

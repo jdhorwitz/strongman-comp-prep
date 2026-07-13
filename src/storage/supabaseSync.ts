@@ -13,10 +13,9 @@ export type SyncStatus =
 	| "synced"
 	| "error";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as
-	| string
-	| undefined;
+const viteEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+const supabaseUrl = viteEnv?.VITE_SUPABASE_URL;
+const supabaseAnonKey = viteEnv?.VITE_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
@@ -30,8 +29,11 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
 		})
 	: null;
 
+const PUBLIC_TRACKER_ID = "josh";
+
 type RemoteAppDataRow = {
-	user_id: string;
+	user_id?: string;
+	id?: string;
 	data: unknown;
 	updated_at: string;
 };
@@ -81,6 +83,29 @@ export async function fetchRemoteAppData(
 	return { data: appDataSchema.parse(data.data), updatedAt: data.updated_at };
 }
 
+export async function fetchPublicAppData(): Promise<{ data: AppData; updatedAt: string } | null> {
+	if (!supabase) return null;
+	const { data, error } = await supabase
+		.from("app_data_public")
+		.select("id,data,updated_at")
+		.eq("id", PUBLIC_TRACKER_ID)
+		.maybeSingle<RemoteAppDataRow>();
+	if (error) throw error;
+	if (!data) return null;
+	return { data: appDataSchema.parse(data.data), updatedAt: data.updated_at };
+}
+
+export async function savePublicAppData(data: AppData): Promise<void> {
+	if (!supabase) return;
+	const parsed = appDataSchema.parse(data);
+	const { error } = await supabase.from("app_data_public").upsert({
+		id: PUBLIC_TRACKER_ID,
+		data: parsed,
+		updated_at: new Date().toISOString(),
+	});
+	if (error) throw error;
+}
+
 export async function saveRemoteAppData(
 	session: Session,
 	data: AppData,
@@ -93,4 +118,5 @@ export async function saveRemoteAppData(
 		updated_at: new Date().toISOString(),
 	});
 	if (error) throw error;
+	await savePublicAppData(parsed);
 }

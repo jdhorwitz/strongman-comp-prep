@@ -18,6 +18,7 @@ import type {
 } from "../types/domain.ts";
 import { loadAppDataFromDatabase, saveAppDataToDatabase } from "./database.ts";
 import {
+	fetchPublicAppData,
 	fetchRemoteAppData,
 	getCurrentSession,
 	isSupabaseConfigured,
@@ -174,9 +175,16 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 					if (cancelled) return;
 					setSession(activeSession);
 					sessionRef.current = activeSession;
-					if (activeSession)
+					if (activeSession) {
 						await applyRemoteOrSeedRemote(activeSession, storedData);
-					else setSyncStatus("signed-out");
+					} else {
+						const publicData = await fetchPublicAppData();
+						if (publicData && !cancelled) {
+							dispatch({ type: "import", data: publicData.data });
+							await saveAppDataToDatabase(publicData.data);
+						}
+						setSyncStatus("signed-out");
+					}
 				}
 				setIsLoaded(true);
 			})
