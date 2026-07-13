@@ -21,13 +21,21 @@ type RecoveryChartKey =
 	| "respiratoryRate"
 	| "bodyTemperatureDeviation";
 
-const scoreLines: Array<{ key: RecoveryChartKey; name: string; color: string }> = [
+const scoreLines: Array<{
+	key: RecoveryChartKey;
+	name: string;
+	color: string;
+}> = [
 	{ key: "readinessScore", name: "Readiness", color: "#7cf7c5" },
 	{ key: "sleepScore", name: "Sleep", color: "#67e8f9" },
 	{ key: "activityScore", name: "Activity", color: "#fbbf24" },
 ];
 
-const vitalLines: Array<{ key: RecoveryChartKey; name: string; color: string }> = [
+const vitalLines: Array<{
+	key: RecoveryChartKey;
+	name: string;
+	color: string;
+}> = [
 	{ key: "hrvMs", name: "HRV", color: "#7cf7c5" },
 	{ key: "restingHeartRate", name: "RHR", color: "#fb7185" },
 	{ key: "sleepHours", name: "Sleep hours", color: "#67e8f9" },
@@ -116,7 +124,9 @@ export function RecoveryPage() {
 			await syncOuraNow();
 			setSyncMessage("Oura synced successfully.");
 		} catch (error) {
-			setSyncMessage(error instanceof Error ? error.message : "Oura sync failed.");
+			setSyncMessage(
+				error instanceof Error ? error.message : "Oura sync failed.",
+			);
 		} finally {
 			setIsSyncingOura(false);
 		}
@@ -156,12 +166,20 @@ export function RecoveryPage() {
 				<MetricCard
 					label="Sleep"
 					value={latest?.sleepHours ? `${latest.sleepHours}h` : "—"}
-					detail={latest?.sleepScore ? `Score ${latest.sleepScore}` : "Sleep score unavailable"}
+					detail={
+						latest?.sleepScore
+							? `Score ${latest.sleepScore}`
+							: "Sleep score unavailable"
+					}
 				/>
 				<MetricCard
 					label="HRV / RHR"
 					value={latest?.hrvMs ? `${latest.hrvMs} ms` : "—"}
-					detail={latest?.restingHeartRate ? `RHR ${latest.restingHeartRate}` : "Resting HR unavailable"}
+					detail={
+						latest?.restingHeartRate
+							? `RHR ${latest.restingHeartRate}`
+							: "Resting HR unavailable"
+					}
 				/>
 			</div>
 
@@ -182,16 +200,25 @@ export function RecoveryPage() {
 					{[...sortedEntries].reverse().map((entry) => (
 						<div className="list-item" key={entry.id}>
 							<strong>{entry.date}</strong>
-							{entry.source ? <span className="muted"> · {entry.source}</span> : null}
+							{entry.source ? (
+								<span className="muted"> · {entry.source}</span>
+							) : null}
 							<br />
 							<span className="muted">
-								Readiness {entry.readinessScore ?? "—"} · Sleep score {entry.sleepScore ?? "—"} · Activity {entry.activityScore ?? "—"}
+								Readiness {entry.readinessScore ?? "—"} · Sleep score{" "}
+								{entry.sleepScore ?? "—"} · Activity{" "}
+								{entry.activityScore ?? "—"}
 							</span>
 							<br />
 							<span className="muted">
-								Sleep {entry.sleepHours ?? "—"}h · HRV {entry.hrvMs ?? "—"}ms · RHR {entry.restingHeartRate ?? "—"}
-								{entry.respiratoryRate ? ` · Resp ${entry.respiratoryRate}` : ""}
-								{entry.bodyTemperatureDeviation ? ` · Temp ${entry.bodyTemperatureDeviation}` : ""}
+								Sleep {entry.sleepHours ?? "—"}h · HRV {entry.hrvMs ?? "—"}ms ·
+								RHR {entry.restingHeartRate ?? "—"}
+								{entry.respiratoryRate
+									? ` · Resp ${entry.respiratoryRate}`
+									: ""}
+								{entry.bodyTemperatureDeviation
+									? ` · Temp ${entry.bodyTemperatureDeviation}`
+									: ""}
 							</span>
 						</div>
 					))}

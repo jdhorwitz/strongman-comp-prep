@@ -385,4 +385,18 @@ a {
 	.grid.three {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
+	.form {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.form label:has(textarea),
+	.form button,
+	.form p {
+		grid-column: 1 / -1;
+	}
+}
+
+@media (min-width: 1100px) {
+	.grid.two {
+		grid-template-columns: minmax(420px, 0.9fr) minmax(420px, 1.1fr);
+	}
 }

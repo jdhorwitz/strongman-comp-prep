@@ -228,9 +228,10 @@ Deno.serve(async (request: Request) => {
 		const expectedToken =
 			Deno.env.get("OURA_SYNC_TOKEN") ?? Deno.env.get("CHATGPT_IMPORT_TOKEN");
 		const isImportToken = Boolean(expectedToken && token === expectedToken);
-		const user = token && !isImportToken
-			? (await supabase.auth.getUser(token)).data.user
-			: null;
+		const user =
+			token && !isImportToken
+				? (await supabase.auth.getUser(token)).data.user
+				: null;
 		const isJosh = user?.email === "jhorwitz@fastmail.com";
 		if (!isImportToken && !isJosh)
 			return jsonResponse(request, { error: "Unauthorized" }, 401);
