@@ -32,8 +32,16 @@ body {
 	min-width: 320px;
 	min-height: 100vh;
 	background:
-		radial-gradient(circle at 10% -10%, rgba(124, 247, 197, 0.18), transparent 32rem),
-		radial-gradient(circle at 95% 0%, rgba(103, 232, 249, 0.14), transparent 28rem),
+		radial-gradient(
+			circle at 10% -10%,
+			rgba(124, 247, 197, 0.18),
+			transparent 32rem
+		),
+		radial-gradient(
+			circle at 95% 0%,
+			rgba(103, 232, 249, 0.14),
+			transparent 28rem
+		),
 		linear-gradient(180deg, #08131d 0%, #071016 42%, #050a0f 100%);
 }
 button,
@@ -68,7 +76,12 @@ a {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
-	background: linear-gradient(90deg, rgba(124, 247, 197, 0.16), transparent 45%, rgba(103, 232, 249, 0.12));
+	background: linear-gradient(
+		90deg,
+		rgba(124, 247, 197, 0.16),
+		transparent 45%,
+		rgba(103, 232, 249, 0.12)
+	);
 	mask-image: linear-gradient(#000, transparent 80%);
 }
 .eyebrow {
@@ -94,7 +107,7 @@ a {
 	font-size: 0.88rem;
 }
 .page {
-	width: min(1140px, 100%);
+	width: min(1240px, 100%);
 	margin: 0 auto;
 	padding: 18px;
 }
@@ -106,7 +119,7 @@ a {
 	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 .grid.three {
-	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 .card {
 	position: relative;
@@ -123,7 +136,11 @@ a {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 36%);
+	background: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.08),
+		transparent 36%
+	);
 }
 .card > * {
 	position: relative;
@@ -141,13 +158,14 @@ a {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	min-height: 132px;
+	min-height: 154px;
 	justify-content: space-between;
 }
 .metric strong {
-	font-size: clamp(1.9rem, 8vw, 2.7rem);
-	line-height: 0.95;
-	letter-spacing: -0.07em;
+	font-size: clamp(1.7rem, 5vw, 2.25rem);
+	line-height: 1;
+	letter-spacing: -0.06em;
+	text-wrap: balance;
 	color: #ffffff;
 }
 .metric .muted:first-child {
@@ -199,7 +217,10 @@ a {
 	background: rgba(4, 10, 15, 0.56);
 	color: var(--text);
 	outline: none;
-	transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+	transition:
+		border-color 0.16s ease,
+		box-shadow 0.16s ease,
+		background 0.16s ease;
 }
 .form input:focus,
 .form textarea:focus,
@@ -225,7 +246,10 @@ a {
 	padding: 11px 15px;
 	font-weight: 900;
 	box-shadow: 0 12px 28px rgba(103, 232, 249, 0.14);
-	transition: transform 0.14s ease, filter 0.14s ease, box-shadow 0.14s ease;
+	transition:
+		transform 0.14s ease,
+		filter 0.14s ease,
+		box-shadow 0.14s ease;
 }
 .btn:hover {
 	transform: translateY(-1px);
@@ -279,7 +303,10 @@ a {
 	font-weight: 750;
 	padding: 7px 2px;
 	border-radius: 16px;
-	transition: color 0.14s ease, background 0.14s ease, transform 0.14s ease;
+	transition:
+		color 0.14s ease,
+		background 0.14s ease,
+		transform 0.14s ease;
 }
 .bottom-nav a.active {
 	background: rgba(124, 247, 197, 0.14);
@@ -332,7 +359,7 @@ a {
 		bottom: auto;
 		left: auto;
 		right: 14px;
-		width: 570px;
+		width: 590px;
 		border: 1px solid var(--border);
 		border-radius: 22px;
 		padding: 7px;
@@ -342,5 +369,8 @@ a {
 	}
 	.page {
 		padding: 28px;
+	}
+	.grid.three {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 }
