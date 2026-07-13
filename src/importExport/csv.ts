@@ -75,6 +75,14 @@ export function recoveryCsv(data: AppData) {
 			recoveryScore: entry.recoveryScore ?? "",
 			fatigueScore: entry.fatigueScore ?? "",
 			stressScore: entry.stressScore ?? "",
+			readinessScore: entry.readinessScore ?? "",
+			sleepScore: entry.sleepScore ?? "",
+			activityScore: entry.activityScore ?? "",
+			restingHeartRate: entry.restingHeartRate ?? "",
+			hrvMs: entry.hrvMs ?? "",
+			respiratoryRate: entry.respiratoryRate ?? "",
+			bodyTemperatureDeviation: entry.bodyTemperatureDeviation ?? "",
+			source: entry.source ?? "",
 			painAreas:
 				entry.painAreas
 					?.map((pain) => `${pain.area}:${pain.severity}`)

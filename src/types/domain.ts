@@ -101,6 +101,14 @@ export type RecoveryEntry = {
 	stressScore?: number;
 	painAreas?: PainArea[];
 	mobilityWork?: string;
+	readinessScore?: number;
+	sleepScore?: number;
+	activityScore?: number;
+	restingHeartRate?: number;
+	hrvMs?: number;
+	respiratoryRate?: number;
+	bodyTemperatureDeviation?: number;
+	source?: string;
 	notes?: string;
 };
 
