@@ -117,53 +117,8 @@ export const initialData: AppData = {
 			"https://ironpodium.com/browse/ev/great-lakes-strongest-man-viii-pro-am-presented-by-forward-inking",
 		events: eventRules,
 	},
-	bodyweightEntries: [
-		{
-			id: "seed-weight",
-			date: "2026-01-01",
-			weightLb: 240.6,
-			notes: "Starting bodyweight from project brief",
-		},
-	],
+	bodyweightEntries: [],
 	nutritionEntries: [],
-	trainingSessions: [
-		{
-			id: "seed-deadlift",
-			date: "2026-01-01",
-			title: "Known starting lifts",
-			sessionType: "Baseline",
-			exercises: [
-				{
-					id: "seed-deadlift-ex",
-					name: "Deadlift",
-					eventCategory: "deadlift",
-					sets: [
-						{
-							id: "seed-deadlift-set",
-							weightLb: 375,
-							reps: 3,
-							rpe: 8,
-							completed: true,
-							notes: "Recent conventional deadlift",
-						},
-					],
-				},
-				{
-					id: "seed-push-press-ex",
-					name: "Push Press",
-					eventCategory: "press",
-					sets: [
-						{
-							id: "seed-push-press-set",
-							weightLb: 190,
-							reps: 1,
-							completed: true,
-							notes: "Recent push press",
-						},
-					],
-				},
-			],
-		},
-	],
+	trainingSessions: [],
 	recoveryEntries: [],
 };
