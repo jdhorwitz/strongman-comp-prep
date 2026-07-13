@@ -13,8 +13,10 @@ POST https://vizjwyxwsheqxncyjxxv.supabase.co/functions/v1/log-nutrition-day
 Install/login to the Supabase CLI, then run:
 
 ```bash
-supabase functions deploy log-nutrition-day --project-ref vizjwyxwsheqxncyjxxv
+supabase functions deploy log-nutrition-day --no-verify-jwt --project-ref vizjwyxwsheqxncyjxxv
 ```
+
+The `--no-verify-jwt` flag is required because this function uses its own private bearer token instead of a Supabase user JWT.
 
 Set secrets. Use a long random token for `CHATGPT_IMPORT_TOKEN`.
 

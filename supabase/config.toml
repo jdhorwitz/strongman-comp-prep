@@ -1,0 +1,2 @@
+[functions.log-nutrition-day]
+verify_jwt = false
