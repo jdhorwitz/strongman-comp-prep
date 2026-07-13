@@ -95,19 +95,36 @@ function parseRange(value: unknown): { startDate: string; endDate: string } {
 	const endDate = date ?? payload.endDate ?? isoDate(new Date());
 	for (const item of [startDate, endDate]) {
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(item)) {
-			throw new Error("date, startDate, and endDate must use YYYY-MM-DD format.");
+			throw new Error(
+				"date, startDate, and endDate must use YYYY-MM-DD format.",
+			);
 		}
 	}
 	return { startDate, endDate };
 }
 
-async function fetchOuraCollection(path: string, startDate: string, endDate: string, token: string) {
-	const query = new URLSearchParams({ start_date: startDate, end_date: endDate });
+async function fetchOuraCollection(
+	path: string,
+	startDate: string,
+	endDate: string,
+	token: string,
+) {
+	const query = new URLSearchParams({
+		start_date: startDate,
+		end_date: endDate,
+	});
 	const url = `${OURA_API_BASE}/${path}?${query.toString()}`;
-	const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-	if (!response.ok) throw new Error(`Oura ${path} failed: ${response.status} ${await response.text()}`);
+	const response = await fetch(url, {
+		headers: { Authorization: `Bearer ${token}` },
+	});
+	if (!response.ok)
+		throw new Error(
+			`Oura ${path} failed: ${response.status} ${await response.text()}`,
+		);
 	const json = await response.json();
-	return Array.isArray(json.data) ? json.data as Array<Record<string, unknown>> : [];
+	return Array.isArray(json.data)
+		? (json.data as Array<Record<string, unknown>>)
+		: [];
 }
 
 function numberField(record: Record<string, unknown>, keys: string[]) {
@@ -124,16 +141,23 @@ function dayField(record: Record<string, unknown>) {
 }
 
 function secondsToHours(seconds: number | undefined) {
-	return seconds === undefined ? undefined : Number((seconds / 3600).toFixed(1));
+	return seconds === undefined
+		? undefined
+		: Number((seconds / 3600).toFixed(1));
 }
 
-function mergeMetric(target: Map<string, Partial<RecoveryEntry>>, date: string, patch: Partial<RecoveryEntry>) {
+function mergeMetric(
+	target: Map<string, Partial<RecoveryEntry>>,
+	date: string,
+	patch: Partial<RecoveryEntry>,
+) {
 	target.set(date, { ...(target.get(date) ?? {}), ...patch });
 }
 
 function buildRecoveryPatches(
 	readiness: Array<Record<string, unknown>>,
-	sleep: Array<Record<string, unknown>>,
+	dailySleep: Array<Record<string, unknown>>,
+	sleepDetails: Array<Record<string, unknown>>,
 	activity: Array<Record<string, unknown>>,
 ) {
 	const byDate = new Map<string, Partial<RecoveryEntry>>();
@@ -143,19 +167,33 @@ function buildRecoveryPatches(
 		const readinessScore = numberField(item, ["score"]);
 		mergeMetric(byDate, date, {
 			readinessScore,
-			recoveryScore: readinessScore ? Math.round(readinessScore / 10) : undefined,
+			recoveryScore: readinessScore
+				? Math.round(readinessScore / 10)
+				: undefined,
 			bodyTemperatureDeviation: numberField(item, ["temperature_deviation"]),
 		});
 	}
-	for (const item of sleep) {
+	for (const item of dailySleep) {
+		const date = dayField(item);
+		if (!date) continue;
+		mergeMetric(byDate, date, { sleepScore: numberField(item, ["score"]) });
+	}
+	for (const item of sleepDetails) {
 		const date = dayField(item);
 		if (!date) continue;
 		mergeMetric(byDate, date, {
-			sleepScore: numberField(item, ["score"]),
-			sleepHours: secondsToHours(numberField(item, ["total_sleep_duration", "sleep_duration"])),
-			restingHeartRate: numberField(item, ["lowest_heart_rate", "average_heart_rate"]),
+			sleepHours: secondsToHours(
+				numberField(item, ["total_sleep_duration", "sleep_duration"]),
+			),
+			restingHeartRate: numberField(item, [
+				"lowest_heart_rate",
+				"average_heart_rate",
+			]),
 			hrvMs: numberField(item, ["average_hrv", "hrv"]),
-			respiratoryRate: numberField(item, ["average_breath", "respiratory_rate"]),
+			respiratoryRate: numberField(item, [
+				"average_breath",
+				"respiratory_rate",
+			]),
 		});
 	}
 	for (const item of activity) {
@@ -167,40 +205,66 @@ function buildRecoveryPatches(
 }
 
 Deno.serve(async (request: Request) => {
-	if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeadersFor(request) });
-	if (request.method !== "POST") return jsonResponse(request, { error: "Method not allowed" }, 405);
+	if (request.method === "OPTIONS")
+		return new Response("ok", { headers: corsHeadersFor(request) });
+	if (request.method !== "POST")
+		return jsonResponse(request, { error: "Method not allowed" }, 405);
 
-	const expectedToken = Deno.env.get("OURA_SYNC_TOKEN") ?? Deno.env.get("CHATGPT_IMPORT_TOKEN");
-	if (!expectedToken) return jsonResponse(request, { error: "OURA_SYNC_TOKEN or CHATGPT_IMPORT_TOKEN is not configured" }, 500);
-	if (bearerToken(request) !== expectedToken) return jsonResponse(request, { error: "Unauthorized" }, 401);
+	const expectedToken =
+		Deno.env.get("OURA_SYNC_TOKEN") ?? Deno.env.get("CHATGPT_IMPORT_TOKEN");
+	if (!expectedToken)
+		return jsonResponse(
+			request,
+			{ error: "OURA_SYNC_TOKEN or CHATGPT_IMPORT_TOKEN is not configured" },
+			500,
+		);
+	if (bearerToken(request) !== expectedToken)
+		return jsonResponse(request, { error: "Unauthorized" }, 401);
 
 	try {
-		const { startDate, endDate } = parseRange(await request.json().catch(() => ({})));
+		const { startDate, endDate } = parseRange(
+			await request.json().catch(() => ({})),
+		);
 		const ouraToken = Deno.env.get("OURA_ACCESS_TOKEN");
 		const supabaseUrl = Deno.env.get("SUPABASE_URL");
 		const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 		if (!ouraToken) throw new Error("OURA_ACCESS_TOKEN is not configured.");
-		if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase service env vars are not configured.");
+		if (!supabaseUrl || !serviceRoleKey)
+			throw new Error("Supabase service env vars are not configured.");
 
-		const [readiness, sleep, activity] = await Promise.all([
+		const [readiness, dailySleep, sleepDetails, activity] = await Promise.all([
 			fetchOuraCollection("daily_readiness", startDate, endDate, ouraToken),
 			fetchOuraCollection("daily_sleep", startDate, endDate, ouraToken),
+			fetchOuraCollection("sleep", startDate, endDate, ouraToken),
 			fetchOuraCollection("daily_activity", startDate, endDate, ouraToken),
 		]);
-		const patches = buildRecoveryPatches(readiness, sleep, activity);
+		const patches = buildRecoveryPatches(
+			readiness,
+			dailySleep,
+			sleepDetails,
+			activity,
+		);
 
-		const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+		const supabase = createClient(supabaseUrl, serviceRoleKey, {
+			auth: { persistSession: false },
+		});
 		const { data: row, error: readError } = await supabase
 			.from("app_data_public")
 			.select("data")
 			.eq("id", PUBLIC_TRACKER_ID)
 			.maybeSingle();
 		if (readError) throw readError;
-		if (!row?.data) throw new Error("Public tracker row does not exist yet. Sign in to the website and sync once first.");
+		if (!row?.data)
+			throw new Error(
+				"Public tracker row does not exist yet. Sign in to the website and sync once first.",
+			);
 
 		const appData = row.data as AppData;
-		if (appData.schemaVersion !== 1) throw new Error("Unsupported tracker schema version.");
-		const existingByDate = new Map(appData.recoveryEntries.map((entry) => [entry.date, entry]));
+		if (appData.schemaVersion !== 1)
+			throw new Error("Unsupported tracker schema version.");
+		const existingByDate = new Map(
+			appData.recoveryEntries.map((entry) => [entry.date, entry]),
+		);
 		for (const [date, patch] of patches) {
 			const existing = existingByDate.get(date);
 			existingByDate.set(date, {
@@ -212,7 +276,9 @@ Deno.serve(async (request: Request) => {
 		}
 		const nextData: AppData = {
 			...appData,
-			recoveryEntries: [...existingByDate.values()].sort((a, b) => a.date.localeCompare(b.date)),
+			recoveryEntries: [...existingByDate.values()].sort((a, b) =>
+				a.date.localeCompare(b.date),
+			),
 		};
 		const updatedAt = new Date().toISOString();
 		const { error: publicWriteError } = await supabase

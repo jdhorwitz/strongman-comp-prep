@@ -14,6 +14,7 @@ The function pulls from Oura API v2:
 
 - `daily_readiness`
 - `daily_sleep`
+- `sleep`
 - `daily_activity`
 
 It saves available fields into `recoveryEntries`:
@@ -21,10 +22,10 @@ It saves available fields into `recoveryEntries`:
 - readiness score
 - sleep score
 - activity score
-- sleep hours, when provided by Oura
-- resting heart rate, when provided by Oura
-- HRV, when provided by Oura
-- respiratory rate, when provided by Oura
+- sleep hours from the detailed `sleep` endpoint
+- resting heart rate from the detailed `sleep` endpoint
+- HRV from the detailed `sleep` endpoint
+- respiratory rate from the detailed `sleep` endpoint
 - body temperature deviation, when provided by Oura
 
 Oura endpoint shapes can vary by scope/data availability, so unavailable fields are left blank.
@@ -83,6 +84,23 @@ curl -X POST 'https://vizjwyxwsheqxncyjxxv.supabase.co/functions/v1/sync-oura' \
 
 If no body is provided, the function imports the last 7 days through today.
 
-## Scheduling later
+## Daily schedule
 
-Once tested, this can be scheduled to run daily using Supabase scheduled functions / cron. Keep it as a manual endpoint first until the imported fields look right.
+The production Supabase project has a `pg_cron` job named `sync-oura-daily` scheduled for `15 12 * * *` UTC. That is approximately 8:15am Eastern during daylight saving time.
+
+The scheduled call sends an empty body, so the function imports the trailing 7 days through today. This lets late-arriving Oura data fill in on the next run.
+
+To inspect the schedule:
+
+```sql
+select * from cron.job where jobname = 'sync-oura-daily';
+```
+
+To inspect recent HTTP calls from the schedule:
+
+```sql
+select *
+from net._http_response
+order by created desc
+limit 20;
+```
