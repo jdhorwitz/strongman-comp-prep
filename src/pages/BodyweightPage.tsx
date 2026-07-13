@@ -8,9 +8,11 @@ import {
 import { useAppData } from "../storage/appStorage.tsx";
 
 export function BodyweightPage() {
-	const { data, dispatch } = useAppData();
+	const { data, dispatch, isSupabaseConfigured, userEmail } = useAppData();
+	const canEdit = !isSupabaseConfigured || Boolean(userEmail);
 	const [date, setDate] = React.useState(new Date().toISOString().slice(0, 10));
 	const [weightLb, setWeightLb] = React.useState("");
+	const [bodyFatPercent, setBodyFatPercent] = React.useState("");
 	const [notes, setNotes] = React.useState("");
 	const latest = latestWeight(data.bodyweightEntries);
 	const remaining = latest
@@ -20,15 +22,30 @@ export function BodyweightPage() {
 		<div className="grid two">
 			<section className="card">
 				<h2>Log bodyweight</h2>
+				{canEdit ? null : (
+					<p className="muted">
+						Public view is read-only. Sign in under Settings to add, update, or
+						delete weigh-ins.
+					</p>
+				)}
 				<form
 					className="form"
 					onSubmit={(event) => {
 						event.preventDefault();
+						if (!canEdit) return;
 						dispatch({
 							type: "addBodyweight",
-							entry: { date, weightLb: Number(weightLb), notes },
+							entry: {
+								date,
+								weightLb: Number(weightLb),
+								bodyFatPercent: bodyFatPercent
+									? Number(bodyFatPercent)
+									: undefined,
+								notes,
+							},
 						});
 						setWeightLb("");
+						setBodyFatPercent("");
 						setNotes("");
 					}}
 				>
@@ -59,6 +76,18 @@ export function BodyweightPage() {
 						/>
 					</label>
 					<label>
+						Body fat %
+						<input
+							inputMode="decimal"
+							value={bodyFatPercent}
+							onChange={(event) =>
+								setBodyFatPercent(
+									(event.currentTarget as unknown as { value: string }).value,
+								)
+							}
+						/>
+					</label>
+					<label>
 						Notes
 						<textarea
 							value={notes}
@@ -69,7 +98,9 @@ export function BodyweightPage() {
 							}
 						/>
 					</label>
-					<button className="btn">Save weigh-in</button>
+					<button className="btn" disabled={!canEdit}>
+						Save weigh-in
+					</button>
 				</form>
 			</section>
 			<section className="card">
@@ -94,25 +125,39 @@ export function BodyweightPage() {
 			</section>
 			<section className="card" style={{ gridColumn: "1 / -1" }}>
 				<h2>Entries</h2>
+				{canEdit ? null : (
+					<p className="muted">
+						You are viewing Josh’s public progress. Delete/edit controls are
+						only available after sign-in.
+					</p>
+				)}
 				<div className="list">
 					{[...data.bodyweightEntries].reverse().map((entry) => (
 						<div className="list-item split" key={entry.id}>
 							<span>
 								<strong>{entry.date}</strong>
 								<br />
-								{entry.weightLb} lb{" "}
+								{entry.weightLb} lb
+								{entry.bodyFatPercent
+									? ` · ${entry.bodyFatPercent}% body fat`
+									: ""}
+								{entry.source ? (
+									<span className="muted"> · {entry.source}</span>
+								) : null}
 								{entry.notes ? (
-									<span className="muted">· {entry.notes}</span>
+									<span className="muted"> · {entry.notes}</span>
 								) : null}
 							</span>
-							<button
-								className="btn danger"
-								onClick={() =>
-									dispatch({ type: "deleteBodyweight", id: entry.id })
-								}
-							>
-								Delete
-							</button>
+							{canEdit ? (
+								<button
+									className="btn danger"
+									onClick={() =>
+										dispatch({ type: "deleteBodyweight", id: entry.id })
+									}
+								>
+									Delete
+								</button>
+							) : null}
 						</div>
 					))}
 				</div>

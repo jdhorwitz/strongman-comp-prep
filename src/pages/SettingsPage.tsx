@@ -51,6 +51,8 @@ export function SettingsPage() {
 					entry: {
 						date: row.date,
 						weightLb: Number(row.weightLb),
+						bodyFatPercent: numberOrUndefined(row.bodyFatPercent),
+						source: row.source,
 						notes: row.notes,
 					},
 				}),

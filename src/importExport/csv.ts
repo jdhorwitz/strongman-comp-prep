@@ -18,11 +18,15 @@ export function parseCsvRows(contents: string): Record<string, string>[] {
 
 export function bodyweightCsv(data: AppData) {
 	return toCsv(
-		data.bodyweightEntries.map(({ date, weightLb, notes }) => ({
-			date,
-			weightLb,
-			notes: notes ?? "",
-		})),
+		data.bodyweightEntries.map(
+			({ date, weightLb, bodyFatPercent, source, notes }) => ({
+				date,
+				weightLb,
+				bodyFatPercent: bodyFatPercent ?? "",
+				source: source ?? "",
+				notes: notes ?? "",
+			}),
+		),
 	);
 }
 

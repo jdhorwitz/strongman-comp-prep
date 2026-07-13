@@ -48,6 +48,8 @@ export type BodyweightEntry = {
 	id: string;
 	date: string;
 	weightLb: number;
+	bodyFatPercent?: number;
+	source?: string;
 	notes?: string;
 };
 export type NutritionEntry = {

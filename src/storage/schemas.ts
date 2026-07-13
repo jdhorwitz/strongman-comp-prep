@@ -8,6 +8,8 @@ export const bodyweightEntrySchema = z.object({
 	id: z.string(),
 	date: dateString,
 	weightLb: z.number().positive(),
+	bodyFatPercent: z.number().nonnegative().optional(),
+	source: z.string().optional(),
 	notes: z.string().optional(),
 });
 export const nutritionEntrySchema = z.object({
