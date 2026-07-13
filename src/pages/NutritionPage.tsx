@@ -20,7 +20,10 @@ export function NutritionPage() {
 			<section className="card">
 				<h2>Log nutrition & meals</h2>
 				{canEdit ? null : (
-					<p className="muted">Public view is read-only. Sign in under Settings to add, update, or delete nutrition entries.</p>
+					<p className="muted">
+						Public view is read-only. Sign in under Settings to add, update, or
+						delete nutrition entries.
+					</p>
 				)}
 				<form
 					className="form"
@@ -98,7 +101,9 @@ export function NutritionPage() {
 							placeholder="Meals: egg breakfast, yogurt bowl, Chipotle bowl. Fiber estimate: 32g."
 						/>
 					</label>
-					<button className="btn" disabled={!canEdit}>Save nutrition</button>
+					<button className="btn" disabled={!canEdit}>
+						Save nutrition
+					</button>
 				</form>
 			</section>
 			<section className="card">
@@ -117,7 +122,12 @@ export function NutritionPage() {
 			</section>
 			<section className="card" style={{ gridColumn: "1 / -1" }}>
 				<h2>Daily meals</h2>
-				{canEdit ? null : <p className="muted">You are viewing Josh’s public progress. Delete/edit controls are only available after sign-in.</p>}
+				{canEdit ? null : (
+					<p className="muted">
+						You are viewing Josh’s public progress. Delete/edit controls are
+						only available after sign-in.
+					</p>
+				)}
 				<div className="list">
 					{[...data.nutritionEntries].reverse().map((entry) => (
 						<div className="list-item split" key={entry.id}>
