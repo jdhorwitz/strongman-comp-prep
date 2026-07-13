@@ -13,7 +13,9 @@ export type SyncStatus =
 	| "synced"
 	| "error";
 
-const viteEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+const viteEnv = (
+	import.meta as unknown as { env?: Record<string, string | undefined> }
+).env;
 const supabaseUrl = viteEnv?.VITE_SUPABASE_URL;
 const supabaseAnonKey = viteEnv?.VITE_SUPABASE_ANON_KEY;
 
@@ -83,7 +85,10 @@ export async function fetchRemoteAppData(
 	return { data: appDataSchema.parse(data.data), updatedAt: data.updated_at };
 }
 
-export async function fetchPublicAppData(): Promise<{ data: AppData; updatedAt: string } | null> {
+export async function fetchPublicAppData(): Promise<{
+	data: AppData;
+	updatedAt: string;
+} | null> {
 	if (!supabase) return null;
 	const { data, error } = await supabase
 		.from("app_data_public")

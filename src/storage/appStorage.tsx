@@ -152,10 +152,17 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 		async (activeSession: Session, localData: AppData) => {
 			setSyncStatus("syncing");
 			setSyncError(null);
-			const remote = await fetchRemoteAppData(activeSession);
-			if (remote) {
-				dispatch({ type: "import", data: remote.data });
-				await saveAppDataToDatabase(remote.data);
+			const [privateRemote, publicRemote] = await Promise.all([
+				fetchRemoteAppData(activeSession),
+				fetchPublicAppData(),
+			]);
+			const newestRemote = [privateRemote, publicRemote]
+				.filter((remote): remote is NonNullable<typeof remote> => Boolean(remote))
+				.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+			if (newestRemote) {
+				dispatch({ type: "import", data: newestRemote.data });
+				await saveAppDataToDatabase(newestRemote.data);
+				await saveRemoteAppData(activeSession, newestRemote.data);
 			} else {
 				await saveRemoteAppData(activeSession, localData);
 			}
