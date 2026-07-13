@@ -1,0 +1,25 @@
+{
+  "name": "Josh",
+  "age": 45,
+  "heightInches": 72,
+  "currentWeightLb": 240.6,
+  "targetClassLb": 220,
+  "targetPreCutRangeLb": {
+    "minimum": 223,
+    "maximum": 225
+  },
+  "deadliftStyle": "conventional",
+  "currentEstimatedDeadlift1RmLb": 430,
+  "recentLifts": [
+    {
+      "exercise": "Deadlift",
+      "weightLb": 375,
+      "reps": 3,
+      "rpe": 8
+    },
+    {
+      "exercise": "Push Press",
+      "weightLb": 190
+    }
+  ]
+}
