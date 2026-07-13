@@ -15,6 +15,7 @@ type RecoveryChartKey =
 	| "readinessScore"
 	| "sleepScore"
 	| "activityScore"
+	| "steps"
 	| "sleepHours"
 	| "restingHeartRate"
 	| "hrvMs"
@@ -111,6 +112,7 @@ export function RecoveryPage() {
 		sleepScore: entry.sleepScore,
 		activityScore: entry.activityScore,
 		sleepHours: entry.sleepHours,
+		steps: entry.steps,
 		restingHeartRate: entry.restingHeartRate,
 		hrvMs: entry.hrvMs,
 		respiratoryRate: entry.respiratoryRate,
@@ -181,6 +183,11 @@ export function RecoveryPage() {
 							: "Resting HR unavailable"
 					}
 				/>
+				<MetricCard
+					label="Steps"
+					value={latest?.steps ? latest.steps.toLocaleString() : "—"}
+					detail={latest ? `${latest.date} · Apple Health/Oura` : "No steps yet"}
+				/>
 			</div>
 
 			<RecoveryChart
@@ -192,6 +199,11 @@ export function RecoveryPage() {
 				data={chartData}
 				lines={vitalLines}
 				title="Sleep and recovery vitals"
+			/>
+			<RecoveryChart
+				data={chartData}
+				lines={[{ key: "steps", name: "Steps", color: "#7cf7c5" }]}
+				title="Steps over time"
 			/>
 
 			<section className="card" style={{ gridColumn: "1 / -1" }}>
@@ -207,7 +219,8 @@ export function RecoveryPage() {
 							<span className="muted">
 								Readiness {entry.readinessScore ?? "—"} · Sleep score{" "}
 								{entry.sleepScore ?? "—"} · Activity{" "}
-								{entry.activityScore ?? "—"}
+								{entry.activityScore ?? "—"} · Steps{" "}
+								{entry.steps?.toLocaleString() ?? "—"}
 							</span>
 							<br />
 							<span className="muted">

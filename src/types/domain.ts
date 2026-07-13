@@ -104,6 +104,7 @@ export type RecoveryEntry = {
 	readinessScore?: number;
 	sleepScore?: number;
 	activityScore?: number;
+	steps?: number;
 	restingHeartRate?: number;
 	hrvMs?: number;
 	respiratoryRate?: number;

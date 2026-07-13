@@ -78,6 +78,7 @@ export function recoveryCsv(data: AppData) {
 			readinessScore: entry.readinessScore ?? "",
 			sleepScore: entry.sleepScore ?? "",
 			activityScore: entry.activityScore ?? "",
+			steps: entry.steps ?? "",
 			restingHeartRate: entry.restingHeartRate ?? "",
 			hrvMs: entry.hrvMs ?? "",
 			respiratoryRate: entry.respiratoryRate ?? "",

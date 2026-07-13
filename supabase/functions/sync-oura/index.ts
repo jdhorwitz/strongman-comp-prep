@@ -22,6 +22,7 @@ type RecoveryEntry = {
 	readinessScore?: number;
 	sleepScore?: number;
 	activityScore?: number;
+	steps?: number;
 	restingHeartRate?: number;
 	hrvMs?: number;
 	respiratoryRate?: number;
@@ -199,7 +200,10 @@ function buildRecoveryPatches(
 	for (const item of activity) {
 		const date = dayField(item);
 		if (!date) continue;
-		mergeMetric(byDate, date, { activityScore: numberField(item, ["score"]) });
+		mergeMetric(byDate, date, {
+			activityScore: numberField(item, ["score"]),
+			steps: numberField(item, ["steps"]),
+		});
 	}
 	return byDate;
 }

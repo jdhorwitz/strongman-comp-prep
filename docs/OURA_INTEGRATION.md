@@ -27,6 +27,7 @@ It saves available fields into `recoveryEntries`:
 - HRV from the detailed `sleep` endpoint
 - respiratory rate from the detailed `sleep` endpoint
 - body temperature deviation, when provided by Oura
+- steps from `daily_activity`
 
 Oura endpoint shapes can vary by scope/data availability, so unavailable fields are left blank.
 

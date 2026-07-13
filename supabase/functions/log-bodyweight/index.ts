@@ -31,17 +31,33 @@ type BodyweightPayload = {
 	notes?: string;
 };
 
+type StepsPayload = {
+	date: string;
+	steps: number;
+	source?: string;
+	notes?: string;
+};
+
 type AppData = {
 	schemaVersion: 1;
-	bodyweightEntries: Array<{
-		id: string;
-		date: string;
-		weightLb: number;
-		bodyFatPercent?: number;
-		source?: string;
-		notes?: string;
-	}>;
+	bodyweightEntries: BodyweightPayloadWithId[];
+	recoveryEntries: RecoveryEntry[];
 	[key: string]: unknown;
+};
+
+type BodyweightPayloadWithId = BodyweightPayload & { id: string };
+type RecoveryEntry = {
+	id: string;
+	date: string;
+	steps?: number;
+	source?: string;
+	notes?: string;
+	[key: string]: unknown;
+};
+
+type ParsedImport = {
+	bodyweights: BodyweightPayload[];
+	steps: StepsPayload[];
 };
 
 function jsonResponse(request: Request, body: unknown, status = 200) {
@@ -67,51 +83,49 @@ function errorMessage(error: unknown): string {
 	}
 }
 
-function optionalString(
-	payload: Record<string, unknown>,
-	key: keyof BodyweightPayload,
-) {
-	const value = payload[key];
-	if (value === undefined || value === null || value === "") return undefined;
-	if (typeof value !== "string")
-		throw new Error(`${key} must be a string when provided.`);
-	return value;
+function stringField(value: unknown) {
+	return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-function optionalNumber(
-	payload: Record<string, unknown>,
-	key: keyof BodyweightPayload,
-) {
-	const value = payload[key];
-	if (value === undefined || value === null || value === "") return undefined;
-	if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-		throw new Error(`${key} must be a non-negative number when provided.`);
-	}
-	return value;
+function numberField(value: unknown) {
+	return typeof value === "number" && Number.isFinite(value) && value >= 0
+		? value
+		: undefined;
 }
 
-function assertSinglePayload(value: unknown): BodyweightPayload {
+function assertSinglePayload(value: unknown): ParsedImport {
 	if (!value || typeof value !== "object")
 		throw new Error("JSON body is required.");
 	const payload = value as Record<string, unknown>;
 	const date = payload.date;
 	if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date))
 		throw new Error("date must be YYYY-MM-DD.");
-	const weightLb = payload.weightLb;
-	if (
-		typeof weightLb !== "number" ||
-		!Number.isFinite(weightLb) ||
-		weightLb <= 0
-	) {
-		throw new Error("weightLb must be a positive number.");
+	const bodyweights: BodyweightPayload[] = [];
+	const stepsPayloads: StepsPayload[] = [];
+	const weightLb = numberField(payload.weightLb);
+	if (weightLb !== undefined) {
+		if (weightLb <= 0) throw new Error("weightLb must be positive.");
+		bodyweights.push({
+			date,
+			weightLb,
+			bodyFatPercent: numberField(payload.bodyFatPercent),
+			source: stringField(payload.source),
+			notes: stringField(payload.notes),
+		});
 	}
-	return {
-		date,
-		weightLb,
-		bodyFatPercent: optionalNumber(payload, "bodyFatPercent"),
-		source: optionalString(payload, "source"),
-		notes: optionalString(payload, "notes"),
-	};
+	const steps = numberField(payload.steps);
+	if (steps !== undefined) {
+		stepsPayloads.push({
+			date,
+			steps: Math.round(steps),
+			source: stringField(payload.source),
+			notes: stringField(payload.notes),
+		});
+	}
+	if (bodyweights.length === 0 && stepsPayloads.length === 0) {
+		throw new Error("Provide weightLb and/or steps.");
+	}
+	return { bodyweights, steps: stepsPayloads };
 }
 
 function sourceRank(source: string | undefined) {
@@ -123,7 +137,19 @@ function sourceRank(source: string | undefined) {
 	return 0;
 }
 
-function healthExportPayloads(value: unknown): BodyweightPayload[] | null {
+function metricDate(rawDate: unknown) {
+	return typeof rawDate === "string" ? rawDate.slice(0, 10) : undefined;
+}
+
+function isDate(value: string | undefined) {
+	return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}
+
+function isStepMetricName(name: string | undefined) {
+	return Boolean(name && /step/i.test(name));
+}
+
+function healthExportPayloads(value: unknown): ParsedImport | null {
 	const root = value as {
 		data?: {
 			metrics?: Array<{ name?: string; units?: string; data?: unknown[] }>;
@@ -131,52 +157,65 @@ function healthExportPayloads(value: unknown): BodyweightPayload[] | null {
 	};
 	const metrics = root?.data?.metrics;
 	if (!Array.isArray(metrics)) return null;
+	const bodyweights: BodyweightPayload[] = [];
+	const stepsPayloads: StepsPayload[] = [];
 	const weightMetric = metrics.find(
 		(metric) => metric.name === "weight_body_mass",
 	);
-	if (!weightMetric || !Array.isArray(weightMetric.data)) return [];
-	const units = weightMetric.units ?? "lb";
-	const byDate = new Map<string, BodyweightPayload & { rawDate?: string }>();
-	for (const item of weightMetric.data as Array<Record<string, unknown>>) {
-		const rawDate = item.date;
-		const qty = item.qty;
-		if (
-			typeof rawDate !== "string" ||
-			typeof qty !== "number" ||
-			!Number.isFinite(qty) ||
-			qty <= 0
-		)
-			continue;
-		const date = rawDate.slice(0, 10);
-		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-		const source =
-			typeof item.source === "string" ? item.source : "Apple Health";
-		const weightLb = units.toLowerCase() === "kg" ? qty * 2.2046226218 : qty;
-		const candidate = {
-			date,
-			weightLb: Number(weightLb.toFixed(1)),
-			source,
-			notes: "Imported from Apple Health export",
-			rawDate,
-		};
-		const current = byDate.get(date);
-		if (
-			!current ||
-			sourceRank(candidate.source) > sourceRank(current.source) ||
-			candidate.rawDate > (current.rawDate ?? "")
-		) {
-			byDate.set(date, candidate);
+	if (weightMetric && Array.isArray(weightMetric.data)) {
+		const units = weightMetric.units ?? "lb";
+		const byDate = new Map<string, BodyweightPayload & { rawDate?: string }>();
+		for (const item of weightMetric.data as Array<Record<string, unknown>>) {
+			const date = metricDate(item.date);
+			const qty = numberField(item.qty);
+			if (!isDate(date) || qty === undefined || qty <= 0) continue;
+			const source = stringField(item.source) ?? "Apple Health";
+			const weightLb = units.toLowerCase() === "kg" ? qty * 2.2046226218 : qty;
+			const candidate = {
+				date,
+				weightLb: Number(weightLb.toFixed(1)),
+				source,
+				notes: "Imported from Apple Health export",
+				rawDate: stringField(item.date),
+			};
+			const current = byDate.get(date);
+			if (
+				!current ||
+				sourceRank(candidate.source) > sourceRank(current.source) ||
+				(candidate.rawDate ?? "") > (current.rawDate ?? "")
+			) {
+				byDate.set(date, candidate);
+			}
+		}
+		bodyweights.push(
+			...[...byDate.values()].map(({ rawDate: _rawDate, ...payload }) => payload),
+		);
+	}
+	const stepMetrics = metrics.filter((metric) => isStepMetricName(metric.name));
+	const stepsByDate = new Map<string, StepsPayload>();
+	for (const metric of stepMetrics) {
+		if (!Array.isArray(metric.data)) continue;
+		for (const item of metric.data as Array<Record<string, unknown>>) {
+			const date = metricDate(item.date ?? item.start ?? item.end);
+			const qty = numberField(item.qty ?? item.value ?? item.count);
+			if (!isDate(date) || qty === undefined) continue;
+			const current = stepsByDate.get(date);
+			stepsByDate.set(date, {
+				date,
+				steps: (current?.steps ?? 0) + Math.round(qty),
+				source: stringField(item.source) ?? current?.source ?? "Apple Health",
+				notes: "Imported from Apple Health export",
+			});
 		}
 	}
-	return [...byDate.values()].map(
-		({ rawDate: _rawDate, ...payload }) => payload,
-	);
+	stepsPayloads.push(...stepsByDate.values());
+	return { bodyweights, steps: stepsPayloads };
 }
 
-function assertPayloads(value: unknown): BodyweightPayload[] {
+function assertPayloads(value: unknown): ParsedImport {
 	const healthExport = healthExportPayloads(value);
 	if (healthExport) return healthExport;
-	return [assertSinglePayload(value)];
+	return assertSinglePayload(value);
 }
 
 Deno.serve(async (request: Request) => {
@@ -201,7 +240,7 @@ Deno.serve(async (request: Request) => {
 		return jsonResponse(request, { error: "Unauthorized" }, 401);
 
 	try {
-		const payload = assertPayload(await request.json());
+		const payloads = assertPayloads(await request.json());
 		const supabaseUrl = Deno.env.get("SUPABASE_URL");
 		const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 		if (!supabaseUrl || !serviceRoleKey)
@@ -225,23 +264,44 @@ Deno.serve(async (request: Request) => {
 		if (appData.schemaVersion !== SCHEMA_VERSION)
 			throw new Error("Unsupported tracker schema version.");
 
-		const entry = {
-			id: `apple-health-bodyweight-${payload.date}`,
-			date: payload.date,
-			weightLb: payload.weightLb,
-			bodyFatPercent: payload.bodyFatPercent,
-			source: payload.source ?? "Apple Health",
-			notes: payload.notes ?? "Imported from Apple Health",
-		};
+		const bodyweightEntries = [...(appData.bodyweightEntries ?? [])];
+		for (const payload of payloads.bodyweights) {
+			const entry = {
+				id: `apple-health-bodyweight-${payload.date}`,
+				date: payload.date,
+				weightLb: payload.weightLb,
+				bodyFatPercent: payload.bodyFatPercent,
+				source: payload.source ?? "Apple Health",
+				notes: payload.notes ?? "Imported from Apple Health",
+			};
+			const index = bodyweightEntries.findIndex(
+				(existing) => existing.date === payload.date,
+			);
+			if (index >= 0) bodyweightEntries[index] = entry;
+			else bodyweightEntries.push(entry);
+		}
+
+		const recoveryByDate = new Map(
+			(appData.recoveryEntries ?? []).map((entry) => [entry.date, entry]),
+		);
+		for (const payload of payloads.steps) {
+			const existing = recoveryByDate.get(payload.date);
+			recoveryByDate.set(payload.date, {
+				...(existing ?? { id: `apple-health-recovery-${payload.date}`, date: payload.date }),
+				steps: payload.steps,
+				source: existing?.source ?? payload.source ?? "Apple Health",
+				notes: existing?.notes ?? payload.notes ?? "Imported from Apple Health",
+			});
+		}
 
 		const nextData: AppData = {
 			...appData,
-			bodyweightEntries: [
-				...appData.bodyweightEntries.filter(
-					(existing) => existing.date !== payload.date,
-				),
-				entry,
-			].sort((a, b) => a.date.localeCompare(b.date)),
+			bodyweightEntries: bodyweightEntries.sort((a, b) =>
+				a.date.localeCompare(b.date),
+			),
+			recoveryEntries: [...recoveryByDate.values()].sort((a, b) =>
+				a.date.localeCompare(b.date),
+			),
 		};
 
 		const updatedAt = new Date().toISOString();
@@ -260,8 +320,8 @@ Deno.serve(async (request: Request) => {
 
 		return jsonResponse(request, {
 			ok: true,
-			date: payload.date,
-			entry,
+			bodyweightCount: payloads.bodyweights.length,
+			stepsCount: payloads.steps.length,
 			updatedAt,
 		});
 	} catch (error) {

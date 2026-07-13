@@ -84,6 +84,7 @@ export function SettingsPage() {
 						readinessScore: numberOrUndefined(row.readinessScore),
 						sleepScore: numberOrUndefined(row.sleepScore),
 						activityScore: numberOrUndefined(row.activityScore),
+						steps: numberOrUndefined(row.steps),
 						restingHeartRate: numberOrUndefined(row.restingHeartRate),
 						hrvMs: numberOrUndefined(row.hrvMs),
 						respiratoryRate: numberOrUndefined(row.respiratoryRate),

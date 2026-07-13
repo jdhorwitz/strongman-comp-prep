@@ -116,6 +116,7 @@ export const appDataSchema = z.object({
 			readinessScore: z.number().optional(),
 			sleepScore: z.number().optional(),
 			activityScore: z.number().optional(),
+			steps: z.number().optional(),
 			restingHeartRate: z.number().optional(),
 			hrvMs: z.number().optional(),
 			respiratoryRate: z.number().optional(),
