@@ -274,6 +274,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 	}, [data]);
 
 	const syncOuraNow = React.useCallback(async () => {
+		const activeSession = sessionRef.current;
+		if (!activeSession) throw new Error("Sign in before syncing Oura.");
 		setSyncStatus("syncing");
 		setSyncError(null);
 		await syncOuraFromSupabaseFunction();
@@ -281,6 +283,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 		if (publicData) {
 			dispatch({ type: "import", data: publicData.data });
 			await saveAppDataToDatabase(publicData.data);
+			await saveRemoteAppData(activeSession, publicData.data);
 		}
 		setSyncStatus("synced");
 	}, []);
