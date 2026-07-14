@@ -145,6 +145,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 	const [session, setSession] = React.useState<Session | null>(null);
 	const sessionRef = React.useRef<Session | null>(null);
 	const dataRef = React.useRef<AppData>(initialData);
+	const hasSkippedInitialPersistenceRef = React.useRef(false);
 
 	useEffect(() => {
 		dataRef.current = data;
@@ -232,6 +233,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		if (!isLoaded) return;
+		if (!hasSkippedInitialPersistenceRef.current) {
+			hasSkippedInitialPersistenceRef.current = true;
+			return;
+		}
 		saveAppDataToDatabase(data).catch((error) => {
 			setStorageError(
 				error instanceof Error
