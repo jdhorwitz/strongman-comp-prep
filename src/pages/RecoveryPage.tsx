@@ -105,7 +105,24 @@ export function RecoveryPage() {
 	const sortedEntries = [...data.recoveryEntries].sort((a, b) =>
 		a.date.localeCompare(b.date),
 	);
-	const latest = sortedEntries.at(-1);
+	const latestReadiness = [...sortedEntries]
+		.reverse()
+		.find((entry) => entry.readinessScore !== undefined);
+	const latestSleep = [...sortedEntries]
+		.reverse()
+		.find(
+			(entry) =>
+				entry.sleepHours !== undefined || entry.sleepScore !== undefined,
+		);
+	const latestHrv = [...sortedEntries]
+		.reverse()
+		.find(
+			(entry) =>
+				entry.hrvMs !== undefined || entry.restingHeartRate !== undefined,
+		);
+	const latestSteps = [...sortedEntries]
+		.reverse()
+		.find((entry) => entry.steps !== undefined);
 	const chartData = sortedEntries.map((entry) => ({
 		date: entry.date,
 		readinessScore: entry.readinessScore,
@@ -162,31 +179,37 @@ export function RecoveryPage() {
 			<div className="grid three">
 				<MetricCard
 					label="Readiness"
-					value={latest?.readinessScore ?? "—"}
-					detail={latest ? `${latest.date} · Oura` : "No Oura data yet"}
+					value={latestReadiness?.readinessScore ?? "—"}
+					detail={
+						latestReadiness
+							? `${latestReadiness.date} · Oura`
+							: "No Oura data yet"
+					}
 				/>
 				<MetricCard
 					label="Sleep"
-					value={latest?.sleepHours ? `${latest.sleepHours}h` : "—"}
+					value={latestSleep?.sleepHours ? `${latestSleep.sleepHours}h` : "—"}
 					detail={
-						latest?.sleepScore
-							? `Score ${latest.sleepScore}`
+						latestSleep?.sleepScore
+							? `Score ${latestSleep.sleepScore} · ${latestSleep.date}`
 							: "Sleep score unavailable"
 					}
 				/>
 				<MetricCard
 					label="HRV / RHR"
-					value={latest?.hrvMs ? `${latest.hrvMs} ms` : "—"}
+					value={latestHrv?.hrvMs ? `${latestHrv.hrvMs} ms` : "—"}
 					detail={
-						latest?.restingHeartRate
-							? `RHR ${latest.restingHeartRate}`
+						latestHrv?.restingHeartRate
+							? `RHR ${latestHrv.restingHeartRate} · ${latestHrv.date}`
 							: "Resting HR unavailable"
 					}
 				/>
 				<MetricCard
 					label="Steps"
-					value={latest?.steps ? latest.steps.toLocaleString() : "—"}
-					detail={latest ? `${latest.date} · Apple Health` : "No steps yet"}
+					value={latestSteps?.steps ? latestSteps.steps.toLocaleString() : "—"}
+					detail={
+						latestSteps ? `${latestSteps.date} · Apple Health` : "No steps yet"
+					}
 				/>
 			</div>
 
