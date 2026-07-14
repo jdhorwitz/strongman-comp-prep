@@ -43,6 +43,25 @@ const vitalLines: Array<{
 	{ key: "respiratoryRate", name: "Resp", color: "#fbbf24" },
 ];
 
+type TimeRange = "7d" | "30d" | "90d" | "all";
+
+const timeRanges: Array<{ value: TimeRange; label: string; days?: number }> = [
+	{ value: "7d", label: "1W", days: 7 },
+	{ value: "30d", label: "1M", days: 30 },
+	{ value: "90d", label: "3M", days: 90 },
+	{ value: "all", label: "All" },
+];
+
+function dateDaysBefore(dateString: string, days: number) {
+	const date = new Date(`${dateString}T00:00:00Z`);
+	date.setUTCDate(date.getUTCDate() - days + 1);
+	return date.toISOString().slice(0, 10);
+}
+
+function valueIsPresent(value: unknown) {
+	return typeof value === "number" && Number.isFinite(value);
+}
+
 function RecoveryChart({
 	data,
 	lines,
@@ -52,16 +71,19 @@ function RecoveryChart({
 	lines: Array<{ key: RecoveryChartKey; name: string; color: string }>;
 	title: string;
 }) {
+	const visibleData = data.filter((row) =>
+		lines.some((line) => valueIsPresent(row[line.key])),
+	);
 	return (
 		<section className="card" style={{ gridColumn: "1 / -1" }}>
 			<h2>{title}</h2>
-			{data.length === 0 ? (
-				<p className="muted">No Oura recovery data yet.</p>
+			{visibleData.length === 0 ? (
+				<p className="muted">No data for this range yet.</p>
 			) : (
 				<div className="chart tall-chart">
 					<ResponsiveContainer width="100%" height="100%">
 						<LineChart
-							data={data}
+							data={visibleData}
 							margin={{ top: 8, right: 16, left: 0, bottom: 8 }}
 						>
 							<CartesianGrid
@@ -102,6 +124,7 @@ export function RecoveryPage() {
 	const { data, syncOuraNow, userEmail } = useAppData();
 	const [syncMessage, setSyncMessage] = React.useState("");
 	const [isSyncingOura, setIsSyncingOura] = React.useState(false);
+	const [timeRange, setTimeRange] = React.useState<TimeRange>("30d");
 	const sortedEntries = [...data.recoveryEntries].sort((a, b) =>
 		a.date.localeCompare(b.date),
 	);
@@ -123,7 +146,16 @@ export function RecoveryPage() {
 	const latestSteps = [...sortedEntries]
 		.reverse()
 		.find((entry) => entry.steps !== undefined);
-	const chartData = sortedEntries.map((entry) => ({
+	const activeRange = timeRanges.find((range) => range.value === timeRange);
+	const latestChartDate = sortedEntries.at(-1)?.date;
+	const startDate =
+		activeRange?.days && latestChartDate
+			? dateDaysBefore(latestChartDate, activeRange.days)
+			: undefined;
+	const filteredEntries = startDate
+		? sortedEntries.filter((entry) => entry.date >= startDate)
+		: sortedEntries;
+	const chartData = filteredEntries.map((entry) => ({
 		date: entry.date,
 		readinessScore: entry.readinessScore,
 		sleepScore: entry.sleepScore,
@@ -212,6 +244,29 @@ export function RecoveryPage() {
 					}
 				/>
 			</div>
+
+			<section className="card compact-card" style={{ gridColumn: "1 / -1" }}>
+				<div className="split">
+					<div>
+						<h2>Chart range</h2>
+						<p className="muted">
+							Showing {activeRange?.label ?? "1M"} of recovery and steps data.
+						</p>
+					</div>
+					<div className="button-row range-buttons">
+						{timeRanges.map((range) => (
+							<button
+								className={`btn secondary${timeRange === range.value ? " active" : ""}`}
+								key={range.value}
+								onClick={() => setTimeRange(range.value)}
+								type="button"
+							>
+								{range.label}
+							</button>
+						))}
+					</div>
+				</div>
+			</section>
 
 			<RecoveryChart
 				data={chartData}

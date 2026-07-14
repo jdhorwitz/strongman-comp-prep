@@ -269,6 +269,18 @@ a {
 	color: var(--text);
 	box-shadow: none;
 }
+.btn.secondary.active {
+	background: rgba(124, 247, 197, 0.16);
+	border-color: rgba(124, 247, 197, 0.38);
+	color: var(--accent);
+}
+.compact-card {
+	padding-block: 18px;
+}
+.range-buttons .btn {
+	min-width: 58px;
+	padding: 9px 12px;
+}
 .btn.danger {
 	background: rgba(251, 113, 133, 0.16);
 	border: 1px solid rgba(251, 113, 133, 0.35);
