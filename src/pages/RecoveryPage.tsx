@@ -186,7 +186,7 @@ export function RecoveryPage() {
 				<MetricCard
 					label="Steps"
 					value={latest?.steps ? latest.steps.toLocaleString() : "—"}
-					detail={latest ? `${latest.date} · Apple Health/Oura` : "No steps yet"}
+					detail={latest ? `${latest.date} · Apple Health` : "No steps yet"}
 				/>
 			</div>
 

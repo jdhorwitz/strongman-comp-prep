@@ -188,7 +188,9 @@ function healthExportPayloads(value: unknown): ParsedImport | null {
 			}
 		}
 		bodyweights.push(
-			...[...byDate.values()].map(({ rawDate: _rawDate, ...payload }) => payload),
+			...[...byDate.values()].map(
+				({ rawDate: _rawDate, ...payload }) => payload,
+			),
 		);
 	}
 	const stepMetrics = metrics.filter((metric) => isStepMetricName(metric.name));
@@ -287,7 +289,10 @@ Deno.serve(async (request: Request) => {
 		for (const payload of payloads.steps) {
 			const existing = recoveryByDate.get(payload.date);
 			recoveryByDate.set(payload.date, {
-				...(existing ?? { id: `apple-health-recovery-${payload.date}`, date: payload.date }),
+				...(existing ?? {
+					id: `apple-health-recovery-${payload.date}`,
+					date: payload.date,
+				}),
 				steps: payload.steps,
 				source: existing?.source ?? payload.source ?? "Apple Health",
 				notes: existing?.notes ?? payload.notes ?? "Imported from Apple Health",
