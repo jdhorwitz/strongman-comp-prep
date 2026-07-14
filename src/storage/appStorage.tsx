@@ -135,7 +135,7 @@ function reducer(state: AppData, action: Action): AppData {
 }
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
-	const [data, dispatch] = useReducer(reducer, initialData);
+	const [data, rawDispatch] = useReducer(reducer, initialData);
 	const [isLoaded, setIsLoaded] = React.useState(false);
 	const [storageError, setStorageError] = React.useState<string | null>(null);
 	const [syncStatus, setSyncStatus] = React.useState<SyncStatus>(
@@ -145,7 +145,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 	const [session, setSession] = React.useState<Session | null>(null);
 	const sessionRef = React.useRef<Session | null>(null);
 	const dataRef = React.useRef<AppData>(initialData);
-	const hasSkippedInitialPersistenceRef = React.useRef(false);
+	const shouldSaveRemoteRef = React.useRef(false);
+
+	const dispatch = React.useCallback((action: Action) => {
+		shouldSaveRemoteRef.current = true;
+		rawDispatch(action);
+	}, []);
 
 	useEffect(() => {
 		dataRef.current = data;
@@ -165,9 +170,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 				)
 				.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
 			if (newestRemote) {
-				dispatch({ type: "import", data: newestRemote.data });
+				rawDispatch({ type: "import", data: newestRemote.data });
 				await saveAppDataToDatabase(newestRemote.data);
-				await saveRemoteAppData(activeSession, newestRemote.data);
 			} else {
 				await saveRemoteAppData(activeSession, localData);
 			}
@@ -181,7 +185,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 		loadAppDataFromDatabase()
 			.then(async (storedData) => {
 				if (cancelled) return;
-				dispatch({ type: "import", data: storedData });
+				rawDispatch({ type: "import", data: storedData });
 				if (isSupabaseConfigured) {
 					const activeSession = await getCurrentSession();
 					if (cancelled) return;
@@ -192,7 +196,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 					} else {
 						const publicData = await fetchPublicAppData();
 						if (publicData && !cancelled) {
-							dispatch({ type: "import", data: publicData.data });
+							rawDispatch({ type: "import", data: publicData.data });
 							await saveAppDataToDatabase(publicData.data);
 						}
 						setSyncStatus("signed-out");
@@ -233,10 +237,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		if (!isLoaded) return;
-		if (!hasSkippedInitialPersistenceRef.current) {
-			hasSkippedInitialPersistenceRef.current = true;
-			return;
-		}
 		saveAppDataToDatabase(data).catch((error) => {
 			setStorageError(
 				error instanceof Error
@@ -245,7 +245,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 			);
 		});
 		const activeSession = sessionRef.current;
-		if (!activeSession) return;
+		if (!activeSession || !shouldSaveRemoteRef.current) return;
+		shouldSaveRemoteRef.current = false;
 		setSyncStatus("syncing");
 		saveRemoteAppData(activeSession, data)
 			.then(() => {
@@ -286,7 +287,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 		await syncOuraFromSupabaseFunction();
 		const publicData = await fetchPublicAppData();
 		if (publicData) {
-			dispatch({ type: "import", data: publicData.data });
+			rawDispatch({ type: "import", data: publicData.data });
 			await saveAppDataToDatabase(publicData.data);
 			await saveRemoteAppData(activeSession, publicData.data);
 		}
